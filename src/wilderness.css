@@ -3,7 +3,7 @@
 
 :root { --ink:#303b35; --earth:#b86f4d; --sand:#efe2c7; --paper:#f7efdc; --sage:#77856d; --blue:#71899a; --red:#a94e39; }
 * { box-sizing:border-box; }
-html { scroll-behavior:smooth; }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 body { margin:0; background:#e9dfc8; color:var(--ink); font-family:"Noto Serif SC",serif; font-size:15px; line-height:1.72; letter-spacing:.018em; }
 button,a { font:inherit; }
 a { color:inherit; text-decoration:none; }
@@ -126,7 +126,27 @@ a { color:inherit; text-decoration:none; }
   .rock-intro { background:transparent; font-size:16px; }
 }
 @media (max-width:620px) {
-  .page-shell { width:min(100% - 24px,1180px); }.section-space { padding:68px 0; }.trail-nav>div a { padding:8px 7px; font-size:13px; }.wild-hero { min-height:850px; }.wild-hero-image { inset:-3% -35%; background-position:62% center; }.cliff-inscription { width:calc(100% - 28px); margin:0 14px 85px; padding:24px 20px; }.cliff-inscription h1 { font-size:clamp(44px,14vw,56px); }.inscription-note { font-size:12px; }.rock-intro { padding:0; font-size:16px; }.scroll-note { padding:42px 28px 105px; }.monoliths { grid-template-columns:1fr; }.monolith,.monolith:nth-child(2) { min-height:0; grid-template-columns:1fr; gap:12px; }.monolith-window { min-height:0; aspect-ratio:16/9; }.monolith-copy { padding:12px 8px 10px; }.works-three,.works-four { grid-template-columns:1fr; gap:22px; }.works-three { margin-bottom:22px; }.map-panel { min-height:820px; padding:46px 18px 35px; }.year-flags { grid-template-columns:repeat(2,1fr); margin-bottom:46px; }.map-route { display:none; }.route-scroll { padding:30px 24px; }.contact-stone { grid-template-columns:92px 1fr; }.contact-note { grid-column:1/-1; justify-self:center; border-left:0; border-top:1px solid rgba(48,59,53,.18); padding-top:12px; }.wood-sign { padding:38px 25px; }.cliff-footer { padding-top:90px; }
+  .page-shell { width:min(100% - 24px,1180px); }.section-space { padding:68px 0; }.wild-hero { min-height:850px; }.wild-hero-image { inset:-3% -35%; background-position:62% center; }.cliff-inscription { width:calc(100% - 28px); margin:0 14px 85px; padding:24px 20px; }.cliff-inscription h1 { font-size:clamp(44px,14vw,56px); }.inscription-note { font-size:12px; }.rock-intro { padding:0; font-size:16px; }.scroll-note { padding:42px 28px 105px; }.monoliths { grid-template-columns:1fr; }.monolith,.monolith:nth-child(2) { min-height:0; grid-template-columns:1fr; gap:12px; }.monolith-window { min-height:0; aspect-ratio:16/9; }.monolith-copy { padding:12px 8px 10px; }.works-three,.works-four { grid-template-columns:1fr; gap:22px; }.works-three { margin-bottom:22px; }.map-route { display:none; }.contact-stone { grid-template-columns:92px 1fr; }.contact-note { grid-column:1/-1; justify-self:center; border-left:0; border-top:1px solid rgba(48,59,53,.18); padding-top:12px; }.wood-sign { padding:38px 25px; }.cliff-footer { padding-top:90px; }
+
+  .trail-nav { top:calc(10px + env(safe-area-inset-top)); width:calc(100% - 20px); min-height:48px; overflow:hidden; padding:6px 8px 6px 12px; border-radius:18px; }
+  .trail-mark { flex:0 0 auto; padding:4px 4px 5px; font-size:14px; letter-spacing:.035em; white-space:nowrap; }
+  .trail-nav>div { flex:1 1 auto; min-width:0; justify-content:flex-end; gap:0; }
+  .trail-nav>div a { flex:0 0 auto; padding:7px 5px; font-size:12px; letter-spacing:0; white-space:nowrap; }
+
+  .path-section { scroll-margin-top:68px; }
+  .section-heading.compact { margin-bottom:26px; }
+  .map-panel { min-height:0; grid-template-columns:1fr; gap:24px; padding:28px 16px 22px; border-radius:28px 12px 24px 14px; }
+  .year-flags { position:relative; flex-direction:row; justify-content:space-between; width:100%; margin:0; padding:0; border-left:0; gap:0; }
+  .year-flags::before { content:""; position:absolute; z-index:-1; left:9%; right:9%; top:10px; border-top:2px dashed rgba(86,92,69,.4); }
+  .year-flags button { flex:1; min-width:0; flex-direction:column; justify-content:flex-start; gap:8px; padding:0 2px; text-align:center; }
+  .year-flags button:hover,.year-flags button.active { transform:none; }
+  .year-flags i { position:relative; left:auto; width:20px; height:20px; flex:0 0 20px; border-width:4px; }
+  .year-flags strong { font-size:16px; line-height:1.2; letter-spacing:.02em; }
+  .route-scroll { min-height:0; padding:26px 22px 28px; border-radius:14px 26px 14px 22px; }
+  .route-scroll>div { gap:0; }
+  .route-year { min-width:70px; padding:5px 0 7px; font-size:17px; }
+  .route-scroll h4 { margin:20px 0 15px; font-size:18px; line-height:1.6; overflow-wrap:anywhere; }
+  .route-scroll p { margin:9px 0; font-size:14px; line-height:1.75; overflow-wrap:anywhere; }
 }
 
 @media (max-width:1023px) {
@@ -150,11 +170,4 @@ a { color:inherit; text-decoration:none; }
   .route-scroll h4 { font-size:clamp(24px,1.55vw,29px); }
   .route-scroll p { font-size:clamp(17px,1.05vw,19px); }
   .footer-content { grid-template-columns:minmax(0,1.08fr) minmax(440px,.72fr); }
-}
-
-
-@media (max-width:620px) {
-  .map-panel { min-height:auto; grid-template-columns:1fr; gap:34px; padding:42px 22px 30px; }
-  .year-flags { margin:0 0 0 25px; }
-  .route-scroll { min-height:0; }
 }
