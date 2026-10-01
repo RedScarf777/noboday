@@ -110,6 +110,8 @@ export default function WildernessApp() {
   const [copied, setCopied] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const workSwipeStartX = useRef<number | null>(null);
+  const workSwipeTriggered = useRef(false);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: .25 });
   const heroY = useTransform(scrollYProgress, [0, .18], [0, 95]);
@@ -158,6 +160,31 @@ export default function WildernessApp() {
     window.setTimeout(() => setCopied(false), 1800);
   };
 
+  const beginWorkSwipe = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch") return;
+    workSwipeStartX.current = event.clientX;
+    workSwipeTriggered.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const endWorkSwipe = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch" || workSwipeStartX.current === null) return;
+    const distance = event.clientX - workSwipeStartX.current;
+    workSwipeStartX.current = null;
+    if (Math.abs(distance) < 48) return;
+    workSwipeTriggered.current = true;
+    setActiveWork(previous => distance < 0 ? (previous + 1) % works.length : (previous - 1 + works.length) % works.length);
+  };
+
+  const cancelWorkSwipe = () => {
+    workSwipeStartX.current = null;
+  };
+
+  const turnPathPage = () => {
+    if (!window.matchMedia("(max-width: 620px)").matches) return;
+    setActivePath(previous => (previous + 1) % paths.length);
+  };
+
   return (
     <main className="wilderness-page">
       <InkTrailCanvas />
@@ -190,7 +217,7 @@ export default function WildernessApp() {
           <div className="work-selector" role="tablist" aria-label="作品选择">
             {works.map((work, index) => <button key={work.title} type="button" role="tab" aria-selected={activeWork === index} className={activeWork === index ? "active" : ""} onPointerEnter={() => setActiveWork(index)} onClick={() => setActiveWork(index)}><span>{work.title}</span><ChevronRight size={17} /></button>)}
           </div>
-          <div className={`work-stage tone-${selectedWork.tone}`} onPointerMove={moveSpotlight}>
+          <div className={`work-stage tone-${selectedWork.tone}`} onPointerMove={moveSpotlight} onPointerDown={beginWorkSwipe} onPointerUp={endWorkSwipe} onPointerCancel={cancelWorkSwipe} onClickCapture={event => { if (!workSwipeTriggered.current) return; event.preventDefault(); event.stopPropagation(); workSwipeTriggered.current = false; }}>
             <h3 className="mobile-work-title">{selectedWork.title}</h3>
             <span className="stage-glow" aria-hidden="true" />
             <AnimatePresence mode="wait">
@@ -206,7 +233,7 @@ export default function WildernessApp() {
 
       <section id="path" className="path-section section-space"><div className="page-shell path-shell"><header className="section-heading path-heading"><h2>成长路径</h2></header><div className="map-panel">
         <div className="year-flags"><motion.span className="year-progress" animate={{ height: `${(activePath / (paths.length - 1)) * 100}%` }} transition={{ duration: .45, ease: "easeOut" }} />{paths.map((item, index) => <button key={item.year} type="button" onClick={() => setActivePath(index)} aria-pressed={activePath === index} className={activePath === index ? "active" : ""}><i /><span><strong>{item.year}</strong><small>{item.title}</small></span></button>)}</div>
-        <AnimatePresence mode="wait"><motion.article key={current.year} initial={{ opacity: 0, y: 24, rotate: -.4 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -18, rotate: .4 }} transition={{ duration: .42, ease: [0.22, 1, 0.36, 1] }} className="route-scroll"><h4>{current.brief}</h4>{current.detail.map(text => <p key={text}>{text}</p>)}<button className="next-path" type="button" aria-label="下一段经历" onClick={() => setActivePath((activePath + 1) % paths.length)}><ChevronRight size={18} /></button></motion.article></AnimatePresence>
+        <AnimatePresence mode="wait"><motion.article key={current.year} initial={{ opacity: 0, y: 24, rotate: -.4 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -18, rotate: .4 }} transition={{ duration: .42, ease: [0.22, 1, 0.36, 1] }} className="route-scroll" onClick={turnPathPage}><h4>{current.brief}</h4>{current.detail.map(text => <p key={text}>{text}</p>)}<button className="next-path" type="button" aria-label="下一段经历" onClick={() => setActivePath((activePath + 1) % paths.length)}><ChevronRight size={18} /></button></motion.article></AnimatePresence>
       </div></div></section>
 
       <footer id="contact" className="cliff-footer"><div className="stars" /><div className="shooting-star" /><div className="page-shell footer-content"><div className="footer-call"><h2>有个好故事<br />想聊聊？</h2></div><div className="contact-stone"><div className="avatar-space"><img src="/momo-avatar.jpg" alt="哞哞头像" /></div><div className="contact-copy"><p>微信</p><strong>RedScarf777</strong></div><button type="button" aria-label={copied ? "微信号已复制" : "复制微信号"} onClick={copyWechat} className={copied ? "copied" : ""}>{copied ? <Check size={18} /> : <Copy size={18} />}</button></div></div><div className="cliff-edge" /></footer>
