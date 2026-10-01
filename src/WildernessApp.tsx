@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "motion/react";
-import { ArrowLeft, ArrowRight, Check, ChevronRight, Copy, Pause, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, Pause, Play } from "lucide-react";
 
 const works = [
-  { orientation: "landscape", title: "国风动画《狐桃桃与老神仙》系列", role: "署名编剧", result: "央视上线项目", image: "/胡桃桃.jpg", link: "https://v.qq.com/x/cover/mzc00200tt3iwq7.html", tone: "vermilion" },
+  { orientation: "landscape", title: "国风动画《狐桃桃与老神仙》系列", role: "编剧", result: "央视上线项目", image: "/胡桃桃.jpg", link: "https://v.qq.com/x/cover/mzc00200tt3iwq7.html", tone: "vermilion" },
   { orientation: "landscape", title: "喜马拉雅音频故事《山猫神捕》", role: "编剧/策划", result: "项目评分 9.6 分，170 万播放", image: "/山猫神捕.png", link: "https://www.ximalaya.com/album/77642883", tone: "blue" },
   { orientation: "landscape", title: "文史教育自媒体（百万粉丝）", role: "项目主笔/文史播客策划", result: "百万级播放，重塑历史叙事", image: "/文史账号.png", link: "https://v.douyin.com/18Yz33k7DWA", tone: "ink" },
-  { orientation: "landscape", title: "海底小纵队学海探秘之超级探险家", role: "项目主力编剧", result: "专注动物与地理科普", image: "/super_explorer.png", link: "https://v.youku.com/v_show/id_XNjQzMjQ2MjI2MA==.html?spm=a2hkm.8166622.PhoneSokuProgram_1.dchapters_1&s=eaaf6adc35504c11a2a9", tone: "sky" },
+  { orientation: "landscape", title: "海底小纵队学海探秘之超级探险家", role: "编剧", result: "专注动物与地理科普", image: "/super_explorer.png", link: "https://v.youku.com/v_show/id_XNjQzMjQ2MjI2MA==.html?spm=a2hkm.8166622.PhoneSokuProgram_1.dchapters_1&s=eaaf6adc35504c11a2a9", tone: "sky" },
   { orientation: "portrait", title: "省级科普影片／非遗展陈", role: "内容策划/现场调研", result: "让传统文化在现代空间呼吸", image: "/展览.jpg", link: "https://mp.weixin.qq.com/s/ZUYAoHh1fPoW93qwn6oo_A", tone: "sand" },
   { orientation: "landscape", title: "纪录短片《山间候鸟》", role: "导演/策划", result: "独立纪录片探索", image: "/山间候鸟新海报.png", link: "https://www.xinpianchang.com/a11740933?from=webShare&channel=copyLink", tone: "slate" },
   { orientation: "landscape", title: "安全教育主题系列动画《森林救援队》", role: "编剧/策划", result: "AIGC动画项目", image: "/forest_rescue.jpg", link: "https://v.qq.com/x/cover/mzc003a3n8k2fz2/z3296gxi797.html", tone: "green" },
@@ -116,7 +116,8 @@ export default function WildernessApp() {
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: .25 });
   const heroY = useTransform(scrollYProgress, [0, .18], [0, 95]);
   const current = paths[activePath];
-  const selectedWork = works[activeWork];
+  const normalizedWorkIndex = ((activeWork % works.length) + works.length) % works.length;
+  const selectedWork = works[normalizedWorkIndex];
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -173,7 +174,7 @@ export default function WildernessApp() {
     workSwipeStartX.current = null;
     if (Math.abs(distance) < 48) return;
     workSwipeTriggered.current = true;
-    setActiveWork(previous => distance < 0 ? (previous + 1) % works.length : (previous - 1 + works.length) % works.length);
+    setActiveWork(previous => distance < 0 ? previous + 1 : previous - 1);
   };
 
   const cancelWorkSwipe = () => {
@@ -183,6 +184,16 @@ export default function WildernessApp() {
   const turnPathPage = () => {
     if (!window.matchMedia("(max-width: 620px)").matches) return;
     setActivePath(previous => (previous + 1) % paths.length);
+  };
+
+  const selectWork = (index: number) => {
+    setActiveWork(previous => {
+      const current = ((previous % works.length) + works.length) % works.length;
+      let distance = index - current;
+      if (distance > works.length / 2) distance -= works.length;
+      if (distance < -works.length / 2) distance += works.length;
+      return previous + distance;
+    });
   };
 
   return (
@@ -195,8 +206,8 @@ export default function WildernessApp() {
         <button className="music-toggle" type="button" onClick={toggleMusic} aria-label={isMusicPlaying ? "暂停背景音乐" : "播放背景音乐"}>{isMusicPlaying ? <Pause size={17} /> : <Play size={17} />}</button>
       </motion.aside>
 
-      <section id="top" className="wild-hero" onPointerMove={moveSpotlight}>
-        <motion.div className="wild-hero-image" style={{ y: heroY }} /><div className="hero-pointer-light" /><div className="wild-hero-wash" /><div className="hero-contours" aria-hidden="true"><i /><i /><i /></div>
+      <section id="top" className="wild-hero" onPointerMove={event => { moveSpotlight(event); const bounds = event.currentTarget.getBoundingClientRect(); event.currentTarget.style.setProperty("--hero-depth-x", `${((event.clientX - bounds.left) / bounds.width - .5) * 18}px`); event.currentTarget.style.setProperty("--hero-depth-y", `${((event.clientY - bounds.top) / bounds.height - .5) * 12}px`); }} onPointerLeave={event => { event.currentTarget.style.setProperty("--hero-depth-x", "0px"); event.currentTarget.style.setProperty("--hero-depth-y", "0px"); }}>
+        <motion.div className="wild-hero-scene" style={{ y: heroY }} aria-hidden="true"><div className="wild-hero-image" /><div className="hero-cloud-drift" /><div className="hero-foreground-breathe" /></motion.div><div className="hero-pointer-light" /><div className="hero-contours" aria-hidden="true"><i /><i /><i /></div>
         <motion.div initial={{ opacity: 0, y: 34 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }} className="cliff-inscription">
           <div className="story-title" aria-label="写故事的人"><svg viewBox="0 0 620 160" aria-hidden="true"><motion.text x="8" y="118" className="story-title-stroke" initial={{ strokeDashoffset: 1800 }} animate={{ strokeDashoffset: 0 }} transition={{ duration: 1.85, ease: [0.22, 1, 0.36, 1], delay: .2 }}>写故事的人</motion.text><motion.text x="8" y="118" className="story-title-fill" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .7, delay: 1.35 }}>写故事的人</motion.text></svg></div><motion.p className="mobile-hero-subtitle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: 1.65 }}>THE STORYTELLER</motion.p>
         </motion.div>
@@ -204,39 +215,36 @@ export default function WildernessApp() {
 
       <section id="about" className="camp-section section-space"><div className="page-shell camp-layout">
         <motion.article initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .75 }} className="scroll-note" onPointerMove={moveSpotlight}>
-          <span className="note-spotlight" /><h2>关于我</h2><p><strong className="about-lead">00后小登编剧，INFJ</strong>这几年折腾的东西比较杂：拍过创投里的独立短片，做过热门 IP 的动画剧集；在喜马拉雅写过儿童故事，也主笔过播放千万的视频文案。偶尔也会跑跑线下，为不说话的非遗做好表达。</p><blockquote>哞的一声就在键盘上开犁！</blockquote>
+          <span className="note-spotlight" /><h2>关于我</h2><p><strong className="about-lead">00后小登，INFJ</strong>这几年折腾的东西比较杂：拍过创投里的独立短片，做过热门 IP 的动画剧集；在喜马拉雅写过儿童故事，也主笔过播放千万的视频文案。偶尔也会跑跑线下，为不说话的非遗做好表达。</p><blockquote>哞的一声就在键盘上开犁！</blockquote><img className="idea-bear" src="/自嘲熊有主意了.gif" alt="自嘲熊有主意了" />
         </motion.article>
         <div className="featured-works">{[
-          { orientation: "landscape", title: "院线电影《海底小纵队：海啸大危机》", image: "/海底小纵队.png", tags: ["累计3300万票房", "署名编剧"], link: "https://v.youku.com/v_show/id_XNjQ4NDY5OTMwOA==.html?spm=a2hkm.8166622.PhoneSokuProgram_1.dplaybutton&s=deaa218d0a024029ab36" },
+          { orientation: "landscape", title: "院线电影《海底小纵队：海啸大危机》", image: "/海底小纵队.png", tags: ["累计3300万票房", "编剧"], link: "https://v.youku.com/v_show/id_XNjQ4NDY5OTMwOA==.html?spm=a2hkm.8166622.PhoneSokuProgram_1.dplaybutton&s=deaa218d0a024029ab36" },
           { orientation: "landscape", title: "创投短片《白日梦梦》", image: "/白日梦梦横版.png", tags: ["电影频道优创计划扶持", "导演、编剧"], link: "https://www.xinpianchang.com/a11616353?from=webShare&channel=copyLink" },
         ].map((item, index) => <motion.a key={item.title} href={item.link} target="_blank" rel="noopener noreferrer" onPointerMove={moveSpotlight} initial={{ opacity: 0, x: 44 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .7, delay: index * .12 }} className={`monolith ${item.orientation}`}><span className="monolith-light" /><div className="monolith-window"><img src={item.image} alt={item.title} /></div><div className="monolith-copy"><h3>{item.title}</h3><div className="monolith-tags">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div></div></motion.a>)}</div>
       </div></section>
 
       <section id="works" className="coordinates-section section-space"><div className="page-shell"><header className="section-heading"><h2>快码加编</h2></header>
-        <div className="work-player">
-          <div className="work-selector" role="tablist" aria-label="作品选择">
-            {works.map((work, index) => <button key={work.title} type="button" role="tab" aria-selected={activeWork === index} className={activeWork === index ? "active" : ""} onPointerEnter={() => setActiveWork(index)} onClick={() => setActiveWork(index)}><span>{work.title}</span><ChevronRight size={17} /></button>)}
-          </div>
-          <div className={`work-stage tone-${selectedWork.tone}`} onPointerMove={moveSpotlight} onPointerDown={beginWorkSwipe} onPointerUp={endWorkSwipe} onPointerCancel={cancelWorkSwipe} onClickCapture={event => { if (!workSwipeTriggered.current) return; event.preventDefault(); event.stopPropagation(); workSwipeTriggered.current = false; }}>
-            <h3 className="mobile-work-title">{selectedWork.title}</h3>
-            <span className="stage-glow" aria-hidden="true" />
-            <AnimatePresence mode="wait">
-              <motion.a key={selectedWork.title} href={selectedWork.link} target="_blank" rel="noopener noreferrer" className={`stage-content ${selectedWork.orientation}`} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: .38, ease: [0.22, 1, 0.36, 1] }}>
-                <div className={`stage-image ${selectedWork.orientation}`}><img src={selectedWork.image} alt={selectedWork.title} /></div>
-                <div className="stage-copy"><dl><div><dt>职能</dt><dd>{selectedWork.role}</dd></div><div><dt>定位</dt><dd>{selectedWork.result}</dd></div></dl></div>
-              </motion.a>
-            </AnimatePresence>
-            <div className="stage-controls"><button type="button" aria-label="上一部作品" onClick={() => setActiveWork((activeWork - 1 + works.length) % works.length)}><ArrowLeft size={19} /></button><div>{works.map((work, index) => <button key={work.title} type="button" aria-label={`切换到${work.title}`} className={activeWork === index ? "active" : ""} onClick={() => setActiveWork(index)} />)}</div><button type="button" aria-label="下一部作品" onClick={() => setActiveWork((activeWork + 1) % works.length)}><ArrowRight size={19} /></button></div>
+        <div className="fan-gallery" onPointerDown={beginWorkSwipe} onPointerUp={endWorkSwipe} onPointerCancel={cancelWorkSwipe} onClickCapture={event => { if (!workSwipeTriggered.current) return; event.preventDefault(); event.stopPropagation(); workSwipeTriggered.current = false; }}>
+          <div className="fan-stage" role="listbox" aria-label="作品封面流">
+            {Array.from({ length: 7 }, (_, slot) => {
+              const offset = slot - 3;
+              const virtualIndex = activeWork + offset;
+              const index = ((virtualIndex % works.length) + works.length) % works.length;
+              const work = works[index];
+              const offsetClass = offset < 0 ? `n${Math.abs(offset)}` : `p${offset}`;
+              const openOrSelect = () => offset === 0 ? window.open(work.link, "_blank", "noopener,noreferrer") : setActiveWork(virtualIndex);
+              return <div key={virtualIndex} role="option" tabIndex={offset === 0 ? 0 : -1} aria-selected={offset === 0} aria-label={work.title} className={`fan-card fan-offset-${offsetClass} tone-${work.tone}`} onClick={openOrSelect} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openOrSelect(); } }}><span className="fan-card-image"><img src={work.image} alt="" /></span>{offset === 0 && <motion.div className="fan-card-meta" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .34, delay: .12 }}><span><b>ROLE</b><em>{work.role}</em></span><span><b>POSITION</b><em>{work.result}</em></span><div className="fan-controls" onClick={event => event.stopPropagation()}><button type="button" aria-label="上一部作品" onClick={() => setActiveWork(previous => previous - 1)}><ArrowLeft size={17} /></button><div>{works.map((item, index) => <button key={item.title} type="button" aria-label={`切换到${item.title}`} className={normalizedWorkIndex === index ? "active" : ""} onClick={() => selectWork(index)} />)}</div><button type="button" aria-label="下一部作品" onClick={() => setActiveWork(previous => previous + 1)}><ArrowRight size={17} /></button></div></motion.div>}</div>;
+            })}
           </div>
         </div>
       </div></section>
 
       <section id="path" className="path-section section-space"><div className="page-shell path-shell"><header className="section-heading path-heading"><h2>成长路径</h2></header><div className="map-panel">
         <div className="year-flags"><motion.span className="year-progress" animate={{ height: `${(activePath / (paths.length - 1)) * 100}%` }} transition={{ duration: .45, ease: "easeOut" }} />{paths.map((item, index) => <button key={item.year} type="button" onClick={() => setActivePath(index)} aria-pressed={activePath === index} className={activePath === index ? "active" : ""}><i /><span><strong>{item.year}</strong><small>{item.title}</small></span></button>)}</div>
-        <AnimatePresence mode="wait"><motion.article key={current.year} initial={{ opacity: 0, y: 24, rotate: -.4 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -18, rotate: .4 }} transition={{ duration: .42, ease: [0.22, 1, 0.36, 1] }} className="route-scroll" onClick={turnPathPage}><h4>{current.brief}</h4>{current.detail.map(text => <p key={text}>{text}</p>)}<button className="next-path" type="button" aria-label="下一段经历" onClick={() => setActivePath((activePath + 1) % paths.length)}><ChevronRight size={18} /></button></motion.article></AnimatePresence>
+        <AnimatePresence mode="wait"><motion.article key={current.year} initial={{ opacity: 0, y: 24, rotate: -.4 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, y: -18, rotate: .4 }} transition={{ duration: .42, ease: [0.22, 1, 0.36, 1] }} className="route-scroll" onClick={turnPathPage}><h4>{current.brief}</h4>{current.detail.map(text => <p key={text}>{text}</p>)}</motion.article></AnimatePresence>
       </div></div></section>
 
-      <footer id="contact" className="cliff-footer"><div className="stars" /><div className="shooting-star" /><div className="page-shell footer-content"><div className="footer-call"><h2>有个好故事<br />想聊聊？</h2></div><div className="contact-stone"><div className="avatar-space"><img src="/momo-avatar.jpg" alt="哞哞头像" /></div><div className="contact-copy"><p>微信</p><strong>RedScarf777</strong></div><button type="button" aria-label={copied ? "微信号已复制" : "复制微信号"} onClick={copyWechat} className={copied ? "copied" : ""}>{copied ? <Check size={18} /> : <Copy size={18} />}</button></div></div><div className="cliff-edge" /></footer>
+      <footer id="contact" className="cliff-footer"><div className="stars" /><div className="shooting-star" /><div className="page-shell footer-content"><motion.div className="footer-call" initial={{ opacity: 0, y: 34 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .45 }} transition={{ duration: .72, ease: [0.22, 1, 0.36, 1] }}><h2>有个好故事<br />想聊聊？</h2></motion.div><motion.div className="contact-stone" initial={{ opacity: 0, y: 38 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .4 }} transition={{ duration: .78, delay: .12, ease: [0.22, 1, 0.36, 1] }}><div className="avatar-space"><img src="/momo-avatar.jpg" alt="哞哞头像" /></div><div className="contact-copy"><p>微信</p><strong>RedScarf777</strong></div><button type="button" aria-label={copied ? "微信号已复制" : "复制微信号"} onClick={copyWechat} className={copied ? "copied" : ""}>{copied ? <Check size={18} /> : <Copy size={18} />}</button></motion.div></div><div className="cliff-edge" /></footer>
     </main>
   );
 }
