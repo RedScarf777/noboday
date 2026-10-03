@@ -1,10 +1,11 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
-import App from './WildernessApp.tsx';
-import './wilderness.css';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import DesktopPortfolio from './DesktopPortfolio';
+import './desktop.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <DesktopPortfolio />
   </StrictMode>,
 );
+
