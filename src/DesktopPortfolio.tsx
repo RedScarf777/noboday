@@ -27,7 +27,7 @@ const asset = (name: string) => `${RAW_ASSET_ROOT}/${encodeURIComponent(name)}`;
 
 const works = [
   { title: '《海底小纵队：海啸大危机》', role: '编剧', metric: '院线票房 3300 万', image: '海底小纵队.png', link: 'https://v.youku.com/v_show/id_XNjQ4NDY5OTMwOA==.html?spm=a2hkm.8166622.PhoneSokuProgram_1.dplaybutton&s=deaa218d0a024029ab36', kind: '院线电影' },
-  { title: '《狐桃桃与老神仙》', role: '署名编剧', metric: '央视上线项目', image: '胡桃桃.jpg', link: 'https://v.qq.com/x/cover/mzc00200tt3iwq7.html', kind: '国风动画' },
+  { title: '《狐桃桃与老神仙》', role: '编剧', metric: '央视上线', image: '胡桃桃.jpg', link: 'https://v.qq.com/x/cover/mzc00200tt3iwq7.html', kind: '国风动画' },
   { title: '《山猫神捕》', role: '编剧 / 策划', metric: '9.6 分 · 170 万播放', image: '山猫神捕.png', link: 'https://www.ximalaya.com/album/77642883', kind: '音频故事' },
   { title: '文史教育自媒体', role: '项目主笔', metric: '百万粉丝 · 千万级播放', image: '文史账号.png', link: 'https://v.douyin.com/18Yz33k7DWA', kind: '知识内容' },
   { title: '《山间候鸟》', role: '导演 / 策划', metric: '独立纪录片探索', image: '山间候鸟新海报.png', link: 'https://www.xinpianchang.com/a11740933?from=webShare&channel=copyLink', kind: '纪录短片' },
@@ -146,7 +146,7 @@ function WindowFrame({
     >
       <header className="window-bar">
         <div className="traffic-lights" aria-hidden="true"><i /><i /><i /></div>
-        <div className="window-title"><span>{eyebrow}</span><strong>{title}</strong></div>
+        <div className="window-title">{eyebrow && <span>{eyebrow}</span>}<strong>{title}</strong></div>
         <span className="window-status">OPEN</span>
       </header>
       {children}
@@ -184,19 +184,13 @@ export default function DesktopPortfolio() {
     return () => observers.forEach(observer => observer?.disconnect());
   }, []);
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const toggleMusic = async () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
       await audio.play();
-      setMusicPlaying(true);
     } else {
       audio.pause();
-      setMusicPlaying(false);
     }
   };
 
@@ -208,16 +202,22 @@ export default function DesktopPortfolio() {
 
   return (
     <main className="narrative-desk">
-      <InkTrailCanvas />
       <motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} />
-      <audio ref={audioRef} src={asset('mozart-k15a.mp3')} loop preload="none" />
+      <audio ref={audioRef} src={asset('mozart-k15a.mp3')} loop preload="metadata" onPlay={() => setMusicPlaying(true)} onPause={() => setMusicPlaying(false)} />
 
       <header className="system-bar">
-        <button type="button" onClick={() => scrollTo('desk')} className="system-brand"><span>哞</span> 哞的故事宇宙</button>
+        <a href="#desk" className="system-brand">哞的故事宇宙</a>
         <nav aria-label="主导航">
-          {sections.slice(1).map(item => <button key={item.id} type="button" onClick={() => scrollTo(item.id)}>{item.label}</button>)}
+          {sections.slice(1).map(item => <a key={item.id} href={`#${item.id}`}>{item.label}</a>)}
         </nav>
-        <div className="system-meta"><span>故事工作台</span><b>{timeLabel}</b></div>
+        <div className="system-meta">
+          <span>故事工作台</span>
+          <button type="button" className="music-control" onClick={toggleMusic} aria-label={musicPlaying ? '暂停背景音乐' : '播放背景音乐'}>
+            {musicPlaying ? <Pause size={13} /> : <Play size={13} />}
+            <em>{musicPlaying ? '暂停' : '播放音乐'}</em>
+          </button>
+          <b>{timeLabel}</b>
+        </div>
       </header>
 
       <section id="desk" className="desktop-hero" onPointerMove={moveSpotlight}>
@@ -229,31 +229,26 @@ export default function DesktopPortfolio() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 95, damping: 18, delay: 0.12 }}
         >
-          <div className="hero-window-top"><div className="traffic-lights"><i /><i /><i /></div><span>storyteller.profile</span><span>在线</span></div>
           <div className="hero-window-body">
             <div className="hero-kicker"><Sparkles size={15} /> WRITER · STORY DESIGNER · AI EXPLORER</div>
             <h1>写故事的人</h1>
             <p>你好，我是哞哞。专注动画编剧与内容策划，从院线银幕到短视频，从网络播客到线下展厅，把复杂世界整理成让人愿意听下去的故事。</p>
             <div className="hero-actions">
-              <button type="button" onClick={() => scrollTo('works')}>打开作品集 <ArrowDownRight size={17} /></button>
-              <button type="button" className="quiet" onClick={() => scrollTo('about')}>认识我</button>
+              <a href="#works">打开作品集 <ArrowDownRight size={17} /></a>
+              <a href="#about" className="quiet">认识我</a>
             </div>
           </div>
-          <div className="hero-profile-card">
-            <img src={asset('momo-avatar.jpg')} alt="哞哞头像" />
-            <div><span>AVAILABLE FOR</span><strong>动画编剧 · 内容策划</strong><small>Beijing / Remote</small></div>
-          </div>
         </motion.div>
-        <div className="desktop-note"><span>今日便签</span><p>故事不是逃离现实，<br />是重新理解现实。</p></div>
       </section>
 
       <div className="workspace">
-        <WindowFrame id="about" eyebrow="PROFILE / 个人档案" title="关于哞哞" className="about-window">
+        <div className="story-flow">
+          <WindowFrame id="about" eyebrow="PROFILE / 个人档案" title="关于哞哞" className="about-window">
           <div className="about-grid">
-            <motion.div className="about-portrait" whileHover={{ rotate: -1.2, scale: 1.015 }} transition={{ type: 'spring', stiffness: 220, damping: 18 }}>
+            <motion.a href="https://www.xinpianchang.com/a11616353?from=webShare&channel=copyLink" target="_blank" rel="noopener noreferrer" className="about-portrait" whileHover={{ rotate: -1.2, scale: 1.015 }} transition={{ type: 'spring', stiffness: 220, damping: 18 }}>
               <img src={asset('白日梦梦横版.png')} alt="创投短片《白日梦梦》" />
               <div><span>创作手记</span><b>从第一部短片开始，我就相信细节比宏大口号更接近人。</b></div>
-            </motion.div>
+            </motion.a>
             <div className="about-copy">
               <h2>把观察变成故事，<br />把故事做成作品。</h2>
               <p>拍过独立短片，做过热门 IP 动画；在喜马拉雅写儿童故事，也为百万级账号写过文史内容。偶尔跑到线下，为“不说话”的非遗和展品找到表达方式。</p>
@@ -261,26 +256,27 @@ export default function DesktopPortfolio() {
               <motion.img className="idea-bear" src={asset('自嘲熊有主意了.gif')} alt="自嘲熊有主意了" drag dragElastic={0.2} whileHover={{ scale: 1.08, rotate: -4 }} title="可以拖动我" />
             </div>
           </div>
-        </WindowFrame>
+          </WindowFrame>
 
-        <WindowFrame id="works" eyebrow="FINDER / 作品资料夹" title="代表作品">
+          <WindowFrame id="works" eyebrow="FINDER / 作品资料夹" title="代表作品">
           <div className="works-intro"><h2>快码加编中</h2></div>
           <div className="work-reel">
             <AnimatePresence mode="wait">
               <motion.a key={works[activeWork].title} href={works[activeWork].link} target="_blank" rel="noopener noreferrer" className="reel-feature" initial={{ opacity: 0, x: 45, rotate: .8 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: -36, rotate: -.6 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
                 <div className="reel-image"><img src={asset(works[activeWork].image)} alt={works[activeWork].title} /><span>{works[activeWork].kind}</span></div>
-                <div className="reel-copy"><small>{works[activeWork].role}</small><h3>{works[activeWork].title}</h3><p>{works[activeWork].metric}</p></div>
+                <div className="reel-copy"><h3>{works[activeWork].title}</h3><div className="reel-meta"><span>{works[activeWork].metric}</span><span>{works[activeWork].role}</span></div></div>
               </motion.a>
             </AnimatePresence>
             <div className="reel-controls">
               <button type="button" aria-label="上一部作品" onClick={() => setActiveWork(previous => (previous - 1 + works.length) % works.length)}><ArrowLeft /></button>
-              <div>{works.map((work, index) => <button key={work.title} type="button" aria-label={`切换到${work.title}`} className={activeWork === index ? 'active' : ''} onClick={() => setActiveWork(index)}><img src={asset(work.image)} alt="" /><span>{work.title}</span></button>)}</div>
+              <div>{works.map((work, index) => <a key={work.title} href={work.link} target="_blank" rel="noopener noreferrer" aria-label={`打开${work.title}`} className={activeWork === index ? 'active' : ''} onMouseEnter={() => setActiveWork(index)} onFocus={() => setActiveWork(index)}><img src={asset(work.image)} alt="" /><span>{work.title}</span></a>)}</div>
               <button type="button" aria-label="下一部作品" onClick={() => setActiveWork(previous => (previous + 1) % works.length)}><ArrowRight /></button>
             </div>
           </div>
-        </WindowFrame>
+          </WindowFrame>
+        </div>
 
-        <WindowFrame id="journey" eyebrow="TIMELINE / 成长路径" title="四个故事章节" className="journey-window">
+        <WindowFrame id="journey" eyebrow="" title="成长路径" className="journey-window">
           <div className="journey-layout">
             <nav className="chapter-tabs" aria-label="成长年份">
               {chapters.map((chapter, index) => (
@@ -305,7 +301,6 @@ export default function DesktopPortfolio() {
                   exit={{ opacity: 0, x: -20, filter: 'blur(4px)' }}
                   transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <span>{chapters[activeChapter].year} · CREATIVE JOURNEY</span>
                   <h2>{chapters[activeChapter].title}</h2>
                   <p>{chapters[activeChapter].text}</p>
                 </motion.article>
@@ -314,9 +309,8 @@ export default function DesktopPortfolio() {
           </div>
         </WindowFrame>
 
-        <WindowFrame id="contact" eyebrow="MESSAGES / 联系方式" title="一起写下一个故事" className="contact-window">
+        <WindowFrame id="contact" eyebrow="MESSAGES" title="联系方式" className="contact-window">
           <div className="contact-layout">
-            <div><span className="live-dot" /> OPEN TO COLLABORATION<h2>有个好故事<br />想聊聊？</h2></div>
             <motion.div className="contact-card" whileHover={{ rotate: 0.4, y: -5 }}>
               <img src={asset('momo-avatar.jpg')} alt="哞哞头像" />
               <div><small>WECHAT</small><strong>RedScarf777</strong><span>点击复制微信号</span></div>
@@ -329,7 +323,7 @@ export default function DesktopPortfolio() {
       <motion.nav className="app-dock" aria-label="快捷导航" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 130, damping: 18, delay: 0.55 }}>
         {sections.map(item => {
           const Icon = item.icon;
-          return <motion.button key={item.id} type="button" aria-label={item.label} className={activeSection === item.id ? 'active' : ''} onClick={() => scrollTo(item.id)} whileHover={{ y: -9, scale: 1.12 }} whileTap={{ scale: 0.94 }}><Icon /><span>{item.label}</span></motion.button>;
+          return <motion.a key={item.id} href={`#${item.id}`} aria-label={item.label} className={activeSection === item.id ? 'active' : ''} whileHover={{ y: -9, scale: 1.12 }} whileTap={{ scale: 0.94 }}><Icon /><span>{item.label}</span></motion.a>;
         })}
         <i />
         <motion.button type="button" aria-label={musicPlaying ? '暂停音乐' : '播放音乐'} onClick={toggleMusic} whileHover={{ y: -9, scale: 1.12 }} whileTap={{ scale: 0.94 }}>{musicPlaying ? <Pause /> : <Play />}<span>{musicPlaying ? '暂停' : '音乐'}</span></motion.button>
@@ -339,4 +333,3 @@ export default function DesktopPortfolio() {
     </main>
   );
 }
-
