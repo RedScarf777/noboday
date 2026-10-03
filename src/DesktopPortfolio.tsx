@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowDownRight,
   BookOpen,
   Check,
@@ -48,6 +50,78 @@ const sections = [
   { id: 'contact', label: '联系', icon: Mail },
 ];
 
+function moveSpotlight(event: PointerEvent<HTMLElement>) {
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--pointer-x', `${event.clientX - bounds.left}px`);
+  event.currentTarget.style.setProperty('--pointer-y', `${event.clientY - bounds.top}px`);
+}
+
+function InkTrailCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    type Point = { x: number; y: number; born: number; size: number };
+    const points: Point[] = [];
+    let previous: { x: number; y: number } | null = null;
+    let frame = 0;
+
+    const resize = () => {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = window.innerWidth * ratio;
+      canvas.height = window.innerHeight * ratio;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+    const onMove = (event: globalThis.PointerEvent) => {
+      if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+      const next = { x: event.clientX, y: event.clientY };
+      const distance = previous ? Math.hypot(next.x - previous.x, next.y - previous.y) : 0;
+      const steps = Math.max(1, Math.floor(distance / 7));
+      for (let index = 1; index <= steps; index += 1) {
+        const ratio = index / steps;
+        points.push({
+          x: previous ? previous.x + (next.x - previous.x) * ratio : next.x,
+          y: previous ? previous.y + (next.y - previous.y) * ratio : next.y,
+          born: performance.now(),
+          size: 1 + Math.random() * 1.6,
+        });
+      }
+      if (points.length > 240) points.splice(0, points.length - 240);
+      previous = next;
+    };
+    const draw = (now: number) => {
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      for (let index = points.length - 1; index >= 0; index -= 1) {
+        const age = now - points[index].born;
+        if (age > 520) { points.splice(index, 1); continue; }
+        const alpha = Math.max(0, 1 - age / 520) * .16;
+        context.beginPath();
+        context.fillStyle = `rgba(35, 55, 47, ${alpha})`;
+        context.arc(points[index].x, points[index].y, points[index].size + age / 850, 0, Math.PI * 2);
+        context.fill();
+      }
+      frame = window.requestAnimationFrame(draw);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    window.addEventListener('pointermove', onMove, { passive: true });
+    frame = window.requestAnimationFrame(draw);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onMove);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="ink-trail-canvas" aria-hidden="true" />;
+}
+
 function WindowFrame({
   id,
   eyebrow,
@@ -69,6 +143,7 @@ function WindowFrame({
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.16 }}
       transition={{ type: 'spring', stiffness: 115, damping: 20 }}
+      onPointerMove={moveSpotlight}
     >
       <header className="window-bar">
         <div className="traffic-lights" aria-hidden="true"><i /><i /><i /></div>
@@ -83,6 +158,7 @@ function WindowFrame({
 export default function DesktopPortfolio() {
   const [activeSection, setActiveSection] = useState('desk');
   const [activeChapter, setActiveChapter] = useState(0);
+  const [activeWork, setActiveWork] = useState(0);
   const [copied, setCopied] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -133,6 +209,7 @@ export default function DesktopPortfolio() {
 
   return (
     <main className="narrative-desk">
+      <InkTrailCanvas />
       <motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} />
       <audio ref={audioRef} src={asset('mozart-k15a.mp3')} loop preload="none" />
 
@@ -144,7 +221,7 @@ export default function DesktopPortfolio() {
         <div className="system-meta"><span>故事工作台</span><b>{timeLabel}</b></div>
       </header>
 
-      <section id="desk" className="desktop-hero">
+      <section id="desk" className="desktop-hero" onPointerMove={moveSpotlight}>
         <motion.div className="desktop-wallpaper" style={{ y: heroY, scale: heroScale }} />
         <div className="wallpaper-wash" />
         <motion.div
@@ -153,7 +230,7 @@ export default function DesktopPortfolio() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 95, damping: 18, delay: 0.12 }}
         >
-          <div className="hero-window-top"><div className="traffic-lights"><i /><i /><i /></div><span>storyteller.profile</span><span>01</span></div>
+          <div className="hero-window-top"><div className="traffic-lights"><i /><i /><i /></div><span>storyteller.profile</span><span>在线</span></div>
           <div className="hero-window-body">
             <div className="hero-kicker"><Sparkles size={15} /> WRITER · STORY DESIGNER · AI EXPLORER</div>
             <h1>写故事的人<span>。</span></h1>
@@ -176,37 +253,32 @@ export default function DesktopPortfolio() {
           <div className="about-grid">
             <motion.div className="about-portrait" whileHover={{ rotate: -1.2, scale: 1.015 }} transition={{ type: 'spring', stiffness: 220, damping: 18 }}>
               <img src={asset('白日梦梦横版.png')} alt="创投短片《白日梦梦》" />
-              <div><span>DIRECTOR'S NOTE 01</span><b>从第一部短片开始，我就相信细节比宏大口号更接近人。</b></div>
+              <div><span>导演手记</span><b>从第一部短片开始，我就相信细节比宏大口号更接近人。</b></div>
             </motion.div>
             <div className="about-copy">
               <span className="folder-label">ABOUT_MOOMOO.TXT</span>
               <h2>把观察变成故事，<br />把故事做成作品。</h2>
               <p>拍过独立短片，做过热门 IP 动画；在喜马拉雅写儿童故事，也为百万级账号写过文史内容。偶尔跑到线下，为“不说话”的非遗和展品找到表达方式。</p>
               <div className="skill-chips"><span>动画编剧</span><span>内容策划</span><span>IP 开发</span><span>文史叙事</span><span>AIGC 工作流</span></div>
+              <motion.img className="idea-bear" src={asset('自嘲熊有主意了.gif')} alt="自嘲熊有主意了" drag dragElastic={0.2} whileHover={{ scale: 1.08, rotate: -4 }} title="可以拖动我" />
             </div>
           </div>
         </WindowFrame>
 
         <WindowFrame id="works" eyebrow="FINDER / 作品资料夹" title="代表作品">
           <div className="works-intro"><div><h2>六个故事坐标</h2><p>点击卡片，打开作品现场。</p></div><span>{String(works.length).padStart(2, '0')} ITEMS</span></div>
-          <div className="project-grid">
-            {works.map((work, index) => (
-              <motion.a
-                key={work.title}
-                href={work.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="project-card"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.18 }}
-                transition={{ duration: 0.5, delay: index * 0.055 }}
-                whileHover={{ y: -8 }}
-              >
-                <div className="project-image"><img src={asset(work.image)} alt="" /><span>{work.kind}</span></div>
-                <div className="project-copy"><small>{work.role}</small><h3>{work.title}</h3><p>{work.metric}</p><ExternalLink size={17} /></div>
+          <div className="work-reel">
+            <AnimatePresence mode="wait">
+              <motion.a key={works[activeWork].title} href={works[activeWork].link} target="_blank" rel="noopener noreferrer" className="reel-feature" initial={{ opacity: 0, x: 45, rotate: .8 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: -36, rotate: -.6 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                <div className="reel-image"><img src={asset(works[activeWork].image)} alt={works[activeWork].title} /><span>{works[activeWork].kind}</span></div>
+                <div className="reel-copy"><small>{works[activeWork].role}</small><h3>{works[activeWork].title}</h3><p>{works[activeWork].metric}</p><span className="reel-open">打开作品 <ExternalLink size={15} /></span></div>
               </motion.a>
-            ))}
+            </AnimatePresence>
+            <div className="reel-controls">
+              <button type="button" aria-label="上一部作品" onClick={() => setActiveWork(previous => (previous - 1 + works.length) % works.length)}><ArrowLeft /></button>
+              <div>{works.map((work, index) => <button key={work.title} type="button" aria-label={`切换到${work.title}`} className={activeWork === index ? 'active' : ''} onClick={() => setActiveWork(index)}><img src={asset(work.image)} alt="" /><span>{work.title}</span></button>)}</div>
+              <button type="button" aria-label="下一部作品" onClick={() => setActiveWork(previous => (previous + 1) % works.length)}><ArrowRight /></button>
+            </div>
           </div>
         </WindowFrame>
 
@@ -235,7 +307,7 @@ export default function DesktopPortfolio() {
                   exit={{ opacity: 0, x: -20, filter: 'blur(4px)' }}
                   transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <span>CHAPTER {String(activeChapter + 1).padStart(2, '0')}</span>
+                  <span>{chapters[activeChapter].year} · CREATIVE JOURNEY</span>
                   <h2>{chapters[activeChapter].title}</h2>
                   <p>{chapters[activeChapter].text}</p>
                 </motion.article>
@@ -246,7 +318,7 @@ export default function DesktopPortfolio() {
 
         <WindowFrame id="contact" eyebrow="MESSAGES / 联系方式" title="一起写下一个故事" className="contact-window">
           <div className="contact-layout">
-            <div><span className="live-dot" /> OPEN TO COLLABORATION<h2>有个好故事<br />想聊聊？</h2><p>动画、少儿内容、文史叙事、展陈策划与 AI 创作工作流，都欢迎来信。</p></div>
+            <div><span className="live-dot" /> OPEN TO COLLABORATION<h2>有个好故事<br />想聊聊？</h2></div>
             <motion.div className="contact-card" whileHover={{ rotate: 0.4, y: -5 }}>
               <img src={asset('momo-avatar.jpg')} alt="哞哞头像" />
               <div><small>WECHAT</small><strong>RedScarf777</strong><span>点击复制微信号</span></div>
