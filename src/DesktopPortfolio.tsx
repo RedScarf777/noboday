@@ -7,7 +7,6 @@ import {
   Check,
   Compass,
   Copy,
-  ExternalLink,
   Film,
   Mail,
   Map,
@@ -214,7 +213,7 @@ export default function DesktopPortfolio() {
       <audio ref={audioRef} src={asset('mozart-k15a.mp3')} loop preload="none" />
 
       <header className="system-bar">
-        <button type="button" onClick={() => scrollTo('desk')} className="system-brand"><span>哞</span> Narrative Desk</button>
+        <button type="button" onClick={() => scrollTo('desk')} className="system-brand"><span>哞</span> 哞的故事宇宙</button>
         <nav aria-label="主导航">
           {sections.slice(1).map(item => <button key={item.id} type="button" onClick={() => scrollTo(item.id)}>{item.label}</button>)}
         </nav>
@@ -233,7 +232,7 @@ export default function DesktopPortfolio() {
           <div className="hero-window-top"><div className="traffic-lights"><i /><i /><i /></div><span>storyteller.profile</span><span>在线</span></div>
           <div className="hero-window-body">
             <div className="hero-kicker"><Sparkles size={15} /> WRITER · STORY DESIGNER · AI EXPLORER</div>
-            <h1>写故事的人<span>。</span></h1>
+            <h1>写故事的人</h1>
             <p>你好，我是哞哞。专注动画编剧与内容策划，从院线银幕到短视频，从网络播客到线下展厅，把复杂世界整理成让人愿意听下去的故事。</p>
             <div className="hero-actions">
               <button type="button" onClick={() => scrollTo('works')}>打开作品集 <ArrowDownRight size={17} /></button>
@@ -253,10 +252,9 @@ export default function DesktopPortfolio() {
           <div className="about-grid">
             <motion.div className="about-portrait" whileHover={{ rotate: -1.2, scale: 1.015 }} transition={{ type: 'spring', stiffness: 220, damping: 18 }}>
               <img src={asset('白日梦梦横版.png')} alt="创投短片《白日梦梦》" />
-              <div><span>导演手记</span><b>从第一部短片开始，我就相信细节比宏大口号更接近人。</b></div>
+              <div><span>创作手记</span><b>从第一部短片开始，我就相信细节比宏大口号更接近人。</b></div>
             </motion.div>
             <div className="about-copy">
-              <span className="folder-label">ABOUT_MOOMOO.TXT</span>
               <h2>把观察变成故事，<br />把故事做成作品。</h2>
               <p>拍过独立短片，做过热门 IP 动画；在喜马拉雅写儿童故事，也为百万级账号写过文史内容。偶尔跑到线下，为“不说话”的非遗和展品找到表达方式。</p>
               <div className="skill-chips"><span>动画编剧</span><span>内容策划</span><span>IP 开发</span><span>文史叙事</span><span>AIGC 工作流</span></div>
@@ -266,12 +264,12 @@ export default function DesktopPortfolio() {
         </WindowFrame>
 
         <WindowFrame id="works" eyebrow="FINDER / 作品资料夹" title="代表作品">
-          <div className="works-intro"><div><h2>六个故事坐标</h2><p>点击卡片，打开作品现场。</p></div><span>{String(works.length).padStart(2, '0')} ITEMS</span></div>
+          <div className="works-intro"><h2>快码加编中</h2></div>
           <div className="work-reel">
             <AnimatePresence mode="wait">
               <motion.a key={works[activeWork].title} href={works[activeWork].link} target="_blank" rel="noopener noreferrer" className="reel-feature" initial={{ opacity: 0, x: 45, rotate: .8 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: -36, rotate: -.6 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
                 <div className="reel-image"><img src={asset(works[activeWork].image)} alt={works[activeWork].title} /><span>{works[activeWork].kind}</span></div>
-                <div className="reel-copy"><small>{works[activeWork].role}</small><h3>{works[activeWork].title}</h3><p>{works[activeWork].metric}</p><span className="reel-open">打开作品 <ExternalLink size={15} /></span></div>
+                <div className="reel-copy"><small>{works[activeWork].role}</small><h3>{works[activeWork].title}</h3><p>{works[activeWork].metric}</p></div>
               </motion.a>
             </AnimatePresence>
             <div className="reel-controls">
