@@ -107,10 +107,13 @@ function InkTrailCanvas() {
 export default function WildernessApp() {
   const [activePath, setActivePath] = useState(0);
   const [activeWork, setActiveWork] = useState(0);
+  const [workView, setWorkView] = useState<"gallery" | "index">("gallery");
+  const [activeSection, setActiveSection] = useState("top");
   const [copied, setCopied] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const workSwipeStartX = useRef<number | null>(null);
+  const workSwipeStartY = useRef<number | null>(null);
   const workSwipeTriggered = useRef(false);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: .25 });
@@ -118,6 +121,26 @@ export default function WildernessApp() {
   const current = paths[activePath];
   const normalizedWorkIndex = ((activeWork % works.length) + works.length) % works.length;
   const selectedWork = works[normalizedWorkIndex];
+
+  useEffect(() => {
+    const sections = ["top", "about", "works", "path", "contact"];
+    const updateSection = () => {
+      const readingLine = window.innerHeight * .38;
+      let currentSection = sections[0];
+      for (const id of sections) {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= readingLine) currentSection = id;
+      }
+      setActiveSection(currentSection);
+    };
+    updateSection();
+    window.addEventListener("scroll", updateSection, { passive: true });
+    window.addEventListener("resize", updateSection);
+    return () => {
+      window.removeEventListener("scroll", updateSection);
+      window.removeEventListener("resize", updateSection);
+    };
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -162,23 +185,27 @@ export default function WildernessApp() {
   };
 
   const beginWorkSwipe = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "touch") return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.target instanceof Element && event.target.closest("button")) return;
     workSwipeStartX.current = event.clientX;
+    workSwipeStartY.current = event.clientY;
     workSwipeTriggered.current = false;
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const endWorkSwipe = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "touch" || workSwipeStartX.current === null) return;
+    if (workSwipeStartX.current === null || workSwipeStartY.current === null) return;
     const distance = event.clientX - workSwipeStartX.current;
+    const verticalDistance = Math.abs(event.clientY - workSwipeStartY.current);
     workSwipeStartX.current = null;
-    if (Math.abs(distance) < 48) return;
+    workSwipeStartY.current = null;
+    if (Math.abs(distance) < 48 || Math.abs(distance) < verticalDistance * 1.25) return;
     workSwipeTriggered.current = true;
     setActiveWork(previous => distance < 0 ? previous + 1 : previous - 1);
   };
 
   const cancelWorkSwipe = () => {
     workSwipeStartX.current = null;
+    workSwipeStartY.current = null;
   };
 
   const turnPathPage = () => {
@@ -200,7 +227,7 @@ export default function WildernessApp() {
     <main className="wilderness-page">
       <InkTrailCanvas />
       <motion.div className="journey-progress" style={{ scaleX: progress }} />
-      <nav className="trail-nav" aria-label="页面导航"><a href="#top" className="trail-mark"><span>哞</span>的故事宇宙</a><div>{anchors.map((label, index) => <a key={label} href={`#${["about", "works", "path", "contact"][index]}`}>{label}</a>)}</div></nav>
+      <nav className="trail-nav" aria-label="页面导航"><a href="#top" className="trail-mark"><span>哞</span>的故事宇宙</a><div>{anchors.map((label, index) => { const id = ["about", "works", "path", "contact"][index]; return <a key={label} href={`#${id}`} className={activeSection === id ? "is-current" : ""} aria-current={activeSection === id ? "location" : undefined}>{label}</a>; })}</div></nav>
       <audio ref={audioRef} src="/mozart-k15a.mp3" autoPlay loop preload="auto" onPlay={() => setIsMusicPlaying(true)} onPause={() => setIsMusicPlaying(false)} />
       <motion.aside className={`music-player ${isMusicPlaying ? "is-playing" : ""}`} initial={{ opacity: 0, x: -18, scale: .9 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: .35 }} aria-label="背景音乐播放器">
         <button className="music-toggle" type="button" onClick={toggleMusic} aria-label={isMusicPlaying ? "暂停背景音乐" : "播放背景音乐"}>{isMusicPlaying ? <Pause size={17} /> : <Play size={17} />}</button>
@@ -223,8 +250,8 @@ export default function WildernessApp() {
         ].map((item, index) => <motion.a key={item.title} href={item.link} target="_blank" rel="noopener noreferrer" onPointerMove={moveSpotlight} initial={{ opacity: 0, x: 44 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: .3 }} transition={{ duration: .7, delay: index * .12 }} className={`monolith ${item.orientation}`}><span className="monolith-light" /><div className="monolith-window"><img src={item.image} alt={item.title} /></div><div className="monolith-copy"><h3>{item.title}</h3><div className="monolith-tags">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div></div></motion.a>)}</div>
       </div></section>
 
-      <section id="works" className="coordinates-section section-space"><div className="page-shell"><header className="section-heading"><h2>快码加编</h2></header>
-        <div className="fan-gallery" onPointerDown={beginWorkSwipe} onPointerUp={endWorkSwipe} onPointerCancel={cancelWorkSwipe} onClickCapture={event => { if (!workSwipeTriggered.current) return; event.preventDefault(); event.stopPropagation(); workSwipeTriggered.current = false; }}>
+      <section id="works" className="coordinates-section section-space"><div className="page-shell"><header className="section-heading work-heading"><h2>快码加编</h2><div className="work-view-switch" role="group" aria-label="作品浏览方式"><button type="button" className={workView === "gallery" ? "active" : ""} aria-pressed={workView === "gallery"} onClick={() => setWorkView("gallery")}>封面</button><button type="button" className={workView === "index" ? "active" : ""} aria-pressed={workView === "index"} onClick={() => setWorkView("index")}>目录</button></div></header>
+        {workView === "gallery" ? <div className="fan-gallery" onPointerDown={beginWorkSwipe} onPointerUp={endWorkSwipe} onPointerCancel={cancelWorkSwipe} onKeyDown={event => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); setActiveWork(previous => previous + (event.key === "ArrowRight" ? 1 : -1)); } }} onClickCapture={event => { if (!workSwipeTriggered.current) return; event.preventDefault(); event.stopPropagation(); workSwipeTriggered.current = false; }}>
           <div className="fan-stage" role="listbox" aria-label="作品封面流">
             {Array.from({ length: 7 }, (_, slot) => {
               const offset = slot - 3;
@@ -233,10 +260,10 @@ export default function WildernessApp() {
               const work = works[index];
               const offsetClass = offset < 0 ? `n${Math.abs(offset)}` : `p${offset}`;
               const openOrSelect = () => offset === 0 ? window.open(work.link, "_blank", "noopener,noreferrer") : setActiveWork(virtualIndex);
-              return <div key={virtualIndex} role="option" tabIndex={offset === 0 ? 0 : -1} aria-selected={offset === 0} aria-label={work.title} className={`fan-card fan-offset-${offsetClass} tone-${work.tone}`} onClick={openOrSelect} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openOrSelect(); } }}><span className="fan-card-image"><img src={work.image} alt="" /></span>{offset === 0 && <motion.div className="fan-card-meta" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .34, delay: .12 }}><span><b>ROLE</b><em>{work.role}</em></span><span><b>POSITION</b><em>{work.result}</em></span><div className="fan-controls" onClick={event => event.stopPropagation()}><button type="button" aria-label="上一部作品" onClick={() => setActiveWork(previous => previous - 1)}><ArrowLeft size={17} /></button><div>{works.map((item, index) => <button key={item.title} type="button" aria-label={`切换到${item.title}`} className={normalizedWorkIndex === index ? "active" : ""} onClick={() => selectWork(index)} />)}</div><button type="button" aria-label="下一部作品" onClick={() => setActiveWork(previous => previous + 1)}><ArrowRight size={17} /></button></div></motion.div>}</div>;
+              return <div key={virtualIndex} role="option" tabIndex={offset === 0 ? 0 : -1} aria-selected={offset === 0} aria-label={work.title} className={`fan-card fan-offset-${offsetClass} tone-${work.tone}`} onClick={openOrSelect} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openOrSelect(); } }}><span className="fan-card-image"><img src={work.image} alt="" /></span>{offset === 0 && <motion.div className="fan-card-meta" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .34, delay: .12 }}><h3>{work.title}</h3><div className="fan-meta-facts"><span><b>ROLE</b><em>{work.role}</em></span><span><b>POSITION</b><em>{work.result}</em></span></div><div className="fan-controls" onClick={event => event.stopPropagation()}><button type="button" aria-label="上一部作品" onClick={() => setActiveWork(previous => previous - 1)}><ArrowLeft size={17} /></button><div>{works.map((item, index) => <button key={item.title} type="button" aria-label={`切换到${item.title}`} className={normalizedWorkIndex === index ? "active" : ""} onClick={() => selectWork(index)} />)}</div><button type="button" aria-label="下一部作品" onClick={() => setActiveWork(previous => previous + 1)}><ArrowRight size={17} /></button></div></motion.div>}</div>;
             })}
           </div>
-        </div>
+        </div> : <motion.div className="work-index" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .4 }} aria-label="作品目录">{works.map((work, index) => <button type="button" key={work.title} className="work-index-card" onClick={() => { selectWork(index); setWorkView("gallery"); }} aria-label={`查看${work.title}`}><span className="work-index-image"><img src={work.image} alt="" loading="lazy" /></span><span className="work-index-title">{work.title}</span><span className="work-index-role">{work.role}</span></button>)}</motion.div>}
       </div></section>
 
       <section id="path" className="path-section section-space"><div className="page-shell path-shell"><header className="section-heading path-heading"><h2>成长路径</h2></header><div className="map-panel">
